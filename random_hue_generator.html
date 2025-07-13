@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Random Hue Generator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    :root {
+      --bg-light: linear-gradient(to right, #e0eafc, #cfdef3);
+      --bg-dark: #121212;
+      --text-dark: #ffffff;
+      --text-light: #000000;
+      --box-dark: #1e1e1e;
+      --slider-bg-dark: #333;
+      --slider-thumb-dark: #fff;
+    }
+
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 40px;
+      background: var(--bg-light);
+      color: var(--text-light);
+      transition: background 0.3s, color 0.3s;
+    }
+    body.dark-mode {
+      background: var(--bg-dark);
+      color: var(--text-dark);
+    }
+    h1 {
+      font-size: 2.5rem;
+    }
+    select, button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+      margin: 10px 5px;
+      cursor: pointer;
+    }
+    .color-display {
+      margin: 30px auto;
+      width: 200px;
+      height: 200px;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      transition: background-color 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .color-display-text {
+      color: #000;
+      font-weight: bold;
+      font-size: 18px;
+      background-color: rgba(255,255,255,0.7);
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+    .hex-code {
+      font-size: 20px;
+      font-weight: bold;
+      margin: 15px 0;
+    }
+    .color-name {
+      font-size: 18px;
+      margin-top: 10px;
+    }
+    .format-toggle {
+      margin-top: 10px;
+    }
+    .gradient-slider-container {
+      margin: 30px auto;
+      width: 60%;
+    }
+    #lightnessSlider {
+      width: 100%;
+      appearance: none;
+      height: 16px;
+      border-radius: 8px;
+      background: #ccc;
+      cursor: pointer;
+    }
+    body.dark-mode #lightnessSlider {
+      background: var(--slider-bg-dark);
+    }
+    #lightnessSlider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 20px;
+      width: 20px;
+      border-radius: 50%;
+      background: var(--slider-thumb-dark);
+      border: 2px solid #666;
+      cursor: pointer;
+    }
+    #lightnessSlider::-moz-range-thumb {
+      height: 20px;
+      width: 20px;
+      border-radius: 50%;
+      background: var(--slider-thumb-dark);
+      border: 2px solid #666;
+      cursor: pointer;
+    }
+    .color-history {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 20px;
+      padding: 20px;
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    body.dark-mode .color-history {
+      background-color: var(--box-dark);
+    }
+    .swatch-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 60px;
+    }
+    .swatch {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      border: 1px solid #aaa;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      cursor: pointer;
+    }
+    .swatch-label {
+      font-size: 12px;
+      margin-top: 4px;
+      color: inherit;
+      text-align: center;
+      word-break: break-word;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎨 Random Hue Generator</h1>
+  <label for="baseColor">Choose a base color:</label>
+  <select id="baseColor">
+    <option value="red">Red</option>
+    <option value="orange">Orange</option>
+    <option value="yellow">Yellow</option>
+    <option value="lime">Lime</option>
+    <option value="green">Green</option>
+    <option value="teal">Teal</option>
+    <option value="cyan">Cyan</option>
+    <option value="blue">Blue</option>
+    <option value="indigo">Indigo</option>
+    <option value="violet">Violet</option>
+    <option value="purple">Purple</option>
+    <option value="magenta">Magenta</option>
+    <option value="pink">Pink</option>
+    <option value="brown">Brown</option>
+  </select>
+  <button onclick="generateColor(true)">Generate</button>
+  <button onclick="saveAsPNG()">Save as PNG</button>
+  <button onclick="exportPaletteImage()">Export Palette (PNG)</button>
+  <button onclick="exportPaletteText()">Export Palette (TXT)</button>
+  <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
+
+  <div class="format-toggle">
+    Format:
+    <select id="formatSelect" onchange="generateColor(false)">
+      <option value="hex">HEX</option>
+      <option value="hsl">HSL</option>
+      <option value="rgb">RGB</option>
+    </select>
+  </div>
+
+  <div class="color-display" id="colorDisplay">
+    <div class="color-display-text" id="colorText">#------</div>
+  </div>
+  <div class="hex-code" id="hexValue">#------</div>
+  <div class="color-name" id="colorName">&nbsp;</div>
+
+  <div class="gradient-slider-container">
+    <input type="range" min="10" max="90" value="50" id="lightnessSlider" />
+  </div>
+
+  <div class="color-history" id="colorHistory"></div>
+
+  <script>
+    const baseHueRanges = {
+      red: [0, 10], orange: [20, 39], yellow: [40, 59], lime: [60, 89],
+      green: [90, 129], teal: [160, 179], cyan: [180, 199], blue: [200, 239],
+      indigo: [240, 259], violet: [260, 269], purple: [270, 289], magenta: [290, 319],
+      pink: [320, 345], brown: [20, 30]
+    };
+
+    let currentHue = 0;
+    const history = [];
+
+    function hslToHex(h, s, l) {
+      s /= 100; l /= 100;
+      const k = n => (n + h / 30) % 12;
+      const a = s * Math.min(l, 1 - l);
+      const f = n => {
+        const color = l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+        return Math.round(255 * color).toString(16).padStart(2, '0');
+      };
+      return `#${f(0)}${f(8)}${f(4)}`;
+    }
+
+    function hslToRgb(h, s, l) {
+      s /= 100; l /= 100;
+      const c = (1 - Math.abs(2 * l - 1)) * s;
+      const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+      const m = l - c / 2;
+      let r = 0, g = 0, b = 0;
+      if (h < 60) [r, g, b] = [c, x, 0];
+      else if (h < 120) [r, g, b] = [x, c, 0];
+      else if (h < 180) [r, g, b] = [0, c, x];
+      else if (h < 240) [r, g, b] = [0, x, c];
+      else if (h < 300) [r, g, b] = [x, 0, c];
+      else [r, g, b] = [c, 0, x];
+      return `rgb(${Math.round((r + m) * 255)}, ${Math.round((g + m) * 255)}, ${Math.round((b + m) * 255)})`;
+    }
+
+    function getColorName(hue, lightness) {
+      if (lightness < 20) return "Deep " + getBaseName(hue);
+      if (lightness > 75) return "Pale " + getBaseName(hue);
+      return getBaseName(hue);
+    }
+
+    function getBaseName(hue) {
+      if (hue < 15 || hue >= 345) return "Red";
+      if (hue < 30) return "Brown";
+      if (hue < 45) return "Orange";
+      if (hue < 60) return "Yellow";
+      if (hue < 90) return "Lime";
+      if (hue < 130) return "Green";
+      if (hue < 160) return "Teal";
+      if (hue < 180) return "Cyan";
+      if (hue < 200) return "Sky Blue";
+      if (hue < 240) return "Blue";
+      if (hue < 260) return "Indigo";
+      if (hue < 270) return "Violet";
+      if (hue < 290) return "Purple";
+      if (hue < 320) return "Magenta";
+      return "Pink";
+    }
+
+    function generateColor(saveToHistory = true) {
+      const baseColor = document.getElementById("baseColor").value;
+      const [hueMin, hueMax] = baseHueRanges[baseColor];
+      if (saveToHistory || currentHue === 0) {
+        currentHue = Math.floor(Math.random() * (hueMax - hueMin + 1)) + hueMin;
+      }
+
+      const lightness = document.getElementById("lightnessSlider").value;
+      const adjustedLightness = baseColor === 'brown' ? Math.min(lightness, 45) : lightness;
+      const format = document.getElementById("formatSelect").value;
+
+      let displayValue = "";
+      const hex = hslToHex(currentHue, 80, adjustedLightness);
+
+      if (format === "hex") {
+        displayValue = hex;
+      } else if (format === "hsl") {
+        displayValue = `hsl(${currentHue}, 80%, ${adjustedLightness}%)`;
+      } else if (format === "rgb") {
+        displayValue = hslToRgb(currentHue, 80, adjustedLightness);
+      }
+
+      document.getElementById("colorDisplay").style.backgroundColor = hex;
+      document.getElementById("hexValue").textContent = hex;
+      document.getElementById("colorText").textContent = displayValue;
+      document.getElementById("colorName").textContent = getColorName(currentHue, adjustedLightness);
+
+      const gradientStops = Array.from({ length: 11 }, (_, i) =>
+        `hsl(${currentHue}, 80%, ${10 + i * 8}%)`
+      ).join(", ");
+      document.getElementById("lightnessSlider").style.background =
+        `linear-gradient(to right, ${gradientStops})`;
+
+      if (saveToHistory) updateHistory(hex, getColorName(currentHue, adjustedLightness));
+    }
+
+    function updateHistory(hex, name) {
+      const historyContainer = document.getElementById("colorHistory");
+      history.unshift({ hex, name });
+      if (history.length > 10) history.pop();
+      historyContainer.innerHTML = '';
+      history.forEach(entry => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "swatch-wrapper";
+
+        const swatch = document.createElement("div");
+        swatch.className = "swatch";
+        swatch.style.backgroundColor = entry.hex;
+        swatch.title = `${entry.name} - ${entry.hex}`;
+        swatch.onclick = () => navigator.clipboard.writeText(entry.hex);
+
+        const label = document.createElement("div");
+        label.className = "swatch-label";
+        label.textContent = entry.name;
+
+        wrapper.appendChild(swatch);
+        wrapper.appendChild(label);
+        historyContainer.appendChild(wrapper);
+      });
+    }
+
+    function saveAsPNG() {
+      const colorBox = document.getElementById("colorDisplay");
+      html2canvas(colorBox).then(canvas => {
+        const link = document.createElement("a");
+        link.download = "color-swatch.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      });
+    }
+
+    function exportPaletteImage() {
+      const historyContainer = document.getElementById("colorHistory");
+      html2canvas(historyContainer).then(canvas => {
+        const link = document.createElement("a");
+        link.download = "color-palette.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      });
+    }
+
+    function exportPaletteText() {
+      const lines = history.map(entry => `${entry.name}: ${entry.hex}`);
+      const blob = new Blob([lines.join("\n")], { type: 'text/plain' });
+      const link = document.createElement("a");
+      link.download = "color-palette.txt";
+      link.href = URL.createObjectURL(blob);
+      link.click();
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+    }
+
+    document.getElementById("lightnessSlider").addEventListener("input", () => generateColor(false));
+    document.getElementById("baseColor").addEventListener("change", () => generateColor(true));
+  </script>
+</body>
+</html>
